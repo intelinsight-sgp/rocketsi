@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROCKETS BUCKET</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Plus+Jakarta+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ios-blue: #007AFF;
+            --ios-yellow: #FFCC00;
+            --apple-ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --apple-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: linear-gradient(135deg, #f5f5f7 0%, #e2e2e7 100%); 
+            height: 100vh; overflow: hidden; 
+        }
+
+        /* --- MONITOR UI --- */
+        #vDisplay { display: none; height: 100vh; grid-template-rows: 90px 1fr 140px 60px; position: relative; }
+        
+        #bgBlurLayer { position: fixed; inset: 0; z-index: 1; transition: 0.8s var(--apple-ease); }
+        .is-blurring { filter: blur(40px) brightness(0.7); transform: scale(1.05); }
+
+        header { position: relative; z-index: 10; padding: 0 50px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid #ddd; }
+        
+        .main-content { position: relative; z-index: 5; display: grid; grid-template-columns: 450px 1fr; gap: 30px; padding: 30px; }
+        .glass-card { background: white; border-radius: 30px; padding: 35px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
+        
+        /* --- PROMO SLIDER --- */
+        .promo-slider { 
+            background: #000; border-radius: 30px; border: 8px solid #fff; overflow: hidden; position: relative; 
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .slide { 
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            opacity: 0; transition: 1s var(--apple-ease); text-align: center; color: white; padding: 20px;
+        }
+        .slide.active { opacity: 1; }
+        .qr-placeholder { background: white; padding: 10px; border-radius: 20px; margin-top: 15px; width: 280px; height: 280px; overflow: hidden; }
+        .qr-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+
+        .bottom-list { position: relative; z-index: 5; display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; padding: 0 30px 20px 30px; }
+        .mini-card { background: var(--ios-blue); color: white; border-radius: 15px; padding: 15px; text-align: center; }
+        
+        .num-display { font-family: 'Orbitron'; font-size: 8rem; color: #1d1d1f; line-height: 1; transition: 0.5s; }
+
+        /* --- ZOOM OVERLAY --- */
+        #zoomOverlay { 
+            position: fixed; inset: 0; z-index: 9999; 
+            display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(20px);
+        }
+        .zoom-card {
+            background: white !important; padding: 80px 110px; border-radius: 50px; text-align: center;
+            box-shadow: 0 60px 120px rgba(0,0,0,0.4); transform: scale(0.4); transition: 0.7s var(--apple-spring);
+        }
+        #zoomOverlay.active { display: flex; }
+        #zoomOverlay.active .zoom-card { transform: scale(1); }
+
+        /* --- CLOSED SCREEN --- */
+        #closedScreen { 
+            position: fixed; inset: 0; background: var(--ios-yellow); z-index: 9500; 
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #closedScreen img { width: 300px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+
+        /* --- MARQUEE --- */
+        .marquee { background: #000; color: var(--ios-yellow); overflow: hidden; position: relative; z-index: 10; display: flex; align-items: center; }
+        .marquee div { white-space: nowrap; animation: scroll 25s linear infinite; padding: 15px 0; font-size: 1.4rem; font-weight: bold; }
+        @keyframes scroll { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+        /* --- CONTROL PANEL --- */
+        #vControl { display: none; flex-direction: column; align-items: center; padding: 40px; height: 100vh; background: #f5f5f7; }
+        .btn-ios { width: 100%; max-width: 500px; padding: 22px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 15px; font-family: 'Orbitron'; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <div id="vHome" style="position:fixed; inset:0; background:#fff; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <h1 style="font-family:Orbitron; color:var(--ios-blue); margin-bottom:40px;">ROCKETS BUCKET</h1>
+        <button class="btn-ios" style="background:var(--ios-blue); color:#fff;" onclick="init('display')">OPEN MONITOR</button>
+        <button class="btn-ios" style="background:#e5e5e7;" onclick="init('control')">OPEN CONTROL (ADMIN)</button>
+    </div>
+
+    <main id="vDisplay">
+        <div id="bgBlurLayer"></div>
+        <header>
+            <h2 style="font-family:Orbitron; color:var(--ios-blue);">ROCKETS BUCKET</h2>
+            <h2 id="clock" style="font-family:Orbitron; color:#8e8e93;">00:00:00</h2>
+        </header>
+
+        <section class="main-content">
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="glass-card" style="background:var(--ios-blue); color:white;">
+                    <h3 style="font-family:Orbitron;">LOKET 1</h3>
+                    <p>LAYANAN UTAMA</p>
+                </div>
+                <div class="glass-card" style="text-align:center;">
+                    <p style="color:#8e8e93; font-weight:bold; letter-spacing:2px; margin-bottom:15px;">NOMOR ANTREAN</p>
+                    <div id="mainNum" class="num-display">D-000</div>
+                </div>
+            </div>
+
+            <div class="promo-slider">
+                <div class="slide active">
+                    <h1 style="font-family:Orbitron; font-size:3.5rem; letter-spacing:5px;">SELAMAT DATANG</h1>
+                    <p style="font-size:1.5rem; margin-top:10px; opacity:0.8;">DI ROCKETS BUCKET</p>
+                </div>
+                <div class="slide">
+                    <h2 style="font-family:Orbitron;">PANTAU DARI HP ANDA</h2>
+                    <p style="margin-top:5px;">Scan QR untuk melihat antrean secara real-time</p>
+                    <div class="qr-placeholder">
+                        <img src="hui.jpeg" alt="QR Link Pelanggan">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bottom-list">
+            <div class="mini-card"><h4>LOKET 1</h4><p id="l1">D-000</p></div>
+            <div class="mini-card" style="opacity:0.4;"><h4>LOKET 2</h4><p>--</p></div>
+            <div class="mini-card" style="opacity:0.4;"><h4>LOKET 3</h4><p>--</p></div>
+            <div class="mini-card" style="opacity:0.4;"><h4>LOKET 4</h4><p>--</p></div>
+            <div class="mini-card" style="opacity:0.4;"><h4>LOKET 5</h4><p>--</p></div>
+        </section>
+
+        <footer class="marquee">
+            <div id="mqText">HARAP MENUNGGU NOMOR ANTREAN ANDA — SCAN QR UNTUK MEMANTAU DARI JARAK JAUH —</div>
+        </footer>
+
+        <div id="zoomOverlay">
+            <div class="zoom-card">
+                <h2 style="color:#8e8e93; font-weight:bold; margin-bottom:10px; font-size:1.5rem;">SILAHKAN MASUK</h2>
+                <div id="zoomNum" style="font-family:Orbitron; font-size:11rem; color:#1d1d1f; line-height:1;">D-000</div>
+            </div>
+        </div>
+
+        <div id="closedScreen">
+            <img src="ci.jpg" alt="Loket Tutup">
+            <h1 style="font-family:Orbitron; font-size:3rem; margin-top:20px;">LOKET TUTUP</h1>
+        </div>
+    </main>
+
+    <main id="vControl">
+        <div style="background:white; padding:30px; border-radius:25px; width:100%; max-width:500px; text-align:center; margin-bottom:20px;">
+            <h2 id="greetAdmin" style="color:var(--ios-blue);">ADMIN PANEL</h2>
+            <p id="statusAdmin" style="color:#8e8e93; margin-top:5px;">Siap Melayani</p>
+        </div>
+        <button class="btn-ios" style="background:var(--ios-blue); color:#fff;" onclick="callNext()">PANGGIL BERIKUTNYA</button>
+        <button id="toggleBtn" class="btn-ios" style="background:var(--ios-yellow);" onclick="toggleTutup()">LOKET TUTUP</button>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const config = { databaseURL: "https://rockets-442e4-default-rtdb.asia-southeast1.firebasedatabase.app/" };
+        const app = initializeApp(config);
+        const db = getDatabase(app);
+        const fbRef = ref(db, 'rockets_v35_final');
+
+        let mode = 'home', state = {};
+
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            if(params.get('mode') === 'customer') {
+                init('display');
+                document.getElementById('vHome').style.display = 'none';
+            }
+        };
+
+        window.init = (m) => {
+            mode = m;
+            document.getElementById('vHome').style.display = 'none';
+            document.getElementById('v' + m.charAt(0).toUpperCase() + m.slice(1)).style.display = (m==='display'?'grid':'flex');
+            if(m === 'display') { 
+                startSlideshow();
+                setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000); 
+            }
+            if(m === 'control') document.getElementById('greetAdmin').innerText = getGreeting().toUpperCase();
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); 
+        };
+
+        function startSlideshow() {
+            const slides = document.querySelectorAll('.slide');
+            let current = 0;
+            setInterval(() => {
+                slides[current].classList.remove('active');
+                current = (current + 1) % slides.length;
+                slides[current].classList.add('active');
+            }, 7000);
+        }
+
+        function getGreeting() {
+            const h = new Date().getHours();
+            if(h < 11) return "Selamat Pagi";
+            if(h < 15) return "Selamat Siang";
+            if(h < 18) return "Selamat Sore";
+            return "Selamat Malam";
+        }
+
+        onValue(fbRef, (snap) => {
+            state = snap.val() || { cur: 0, isCalling: false, isClosed: false };
+
+            if(mode === 'display') {
+                const num = "D-" + String(state.cur).padStart(3, '0');
+                document.getElementById('mainNum').innerText = num;
+                document.getElementById('zoomNum').innerText = num;
+                document.getElementById('l1').innerText = num;
+
+                document.getElementById('closedScreen').style.display = state.isClosed ? 'flex' : 'none';
+                
+                if(state.isCalling && !state.isClosed) {
+                    document.getElementById('bgBlurLayer').classList.add('is-blurring');
+                    document.getElementById('zoomOverlay').classList.add('active');
+                    const params = new URLSearchParams(window.location.search);
+                    if(params.get('mode') !== 'customer') speakQueue(state.cur);
+                } else {
+                    document.getElementById('bgBlurLayer').classList.remove('is-blurring');
+                    document.getElementById('zoomOverlay').classList.remove('active');
+                }
+            }
+
+            if(mode === 'control') {
+                const btn = document.getElementById('toggleBtn');
+                btn.innerText = state.isClosed ? "BUKA LOKET" : "LOKET TUTUP";
+                btn.style.background = state.isClosed ? "var(--ios-blue)" : "var(--ios-yellow)";
+            }
+        });
+
+        window.callNext = () => update(fbRef, { cur: (state.cur || 0) + 1, isCalling: true });
+        window.toggleTutup = () => update(fbRef, { isClosed: !state.isClosed, isCalling: false });
+
+        function speakQueue(n) {
+            const m = new SpeechSynthesisUtterance(getGreeting() + ". Nomor antrean D " + n + ". Silahkan masuk.");
+            m.lang = 'id-ID';
+            m.rate = 0.9;
+            window.speechSynthesis.speak(m);
+            setTimeout(() => update(fbRef, { isCalling: false }), 6000);
+        }
+    </script>
+</body>
+</html>
